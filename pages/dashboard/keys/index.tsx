@@ -5,7 +5,7 @@ import cookies from 'next-cookies';
 import useUpdateEffect from 'react-use/lib/useUpdateEffect';
 import { initStore, useStore } from 'src/store';
 import { IStore } from 'src/reducer';
-import { ssrKeysFetchList } from 'src/containers/Keys/ssr';
+import { ssrKeysFetchList, ssrRouteParserKeys } from 'src/containers/Keys/ssr';
 import { ssrSessionUserData } from 'src/containers/Session/ssr';
 import * as keysSelectors from 'src/containers/Keys/selectors';
 import { useContainerKeys } from 'src/containers/Keys/hooks';
@@ -46,7 +46,7 @@ export const PageContent: React.FC = () => {
 };
 
 const useHooks = () => {
-  const { fetchKeysListWatch, resetList } = useContainerKeys();
+  const { fetchKeysListWatch, resetList, routeWatcher } = useContainerKeys();
 
   useUpdateEffect(() => {
     const req = fetchKeysListWatch();
@@ -60,12 +60,17 @@ const useHooks = () => {
       resetList();
     };
   }, [resetList]);
+
+  useEffect(() => {
+    routeWatcher();
+  }, [routeWatcher]);
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const store = initStore(undefined);
   const { auth_token } = cookies(context);
 
+  ssrRouteParserKeys(store, context.query)
   await ssrSessionUserData(store, auth_token);
   await ssrKeysFetchList(store, false);
 

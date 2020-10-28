@@ -15,7 +15,7 @@ import Page from 'src/components/Page';
 import StorageList from 'src/components/StorageList';
 
 import Layout from 'src/layouts/DashboardLayout';
-import { ssrStorageFetchItems } from 'src/containers/Storage/ssr';
+import { ssrRouteParserStorage, ssrStorageFetchItems } from 'src/containers/Storage/ssr';
 
 const PageWrap: NextPage<{ initialReduxState: IStore }> = ({
   initialReduxState,
@@ -45,7 +45,7 @@ export const PageContent: React.FC = () => {
 };
 
 const useHooks = () => {
-  const { fetchStorageItemsWatcher, resetState } = useContainerStorage();
+  const { fetchStorageItemsWatcher, resetState, routeWatcher} = useContainerStorage();
 
   useEffect(() => {
     return () => {
@@ -60,12 +60,17 @@ const useHooks = () => {
       req.abort();
     };
   }, [fetchStorageItemsWatcher]);
+
+  useEffect(() => {
+    routeWatcher()
+  }, [routeWatcher]);
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const store = initStore(undefined);
   const { auth_token } = cookies(context);
 
+  ssrRouteParserStorage(store, context.query);
   await ssrSessionUserData(store, auth_token);
   await ssrStorageFetchItems(store);
 

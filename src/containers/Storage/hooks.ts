@@ -4,9 +4,11 @@ import { IApiParamsKeysStorage } from 'libs/api/keys/storage';
 import * as sessionSelectors from 'src/containers/Session/selectors';
 import { IApiPager } from 'libs/api/types';
 import { useAppDispatch } from 'src/store';
-import { actions as storageActions } from './reducer';
+import { actions as storageActions, pureState } from './reducer';
 import * as storageSelectors from './selectors';
-import { IStoreStorage } from './types';
+import { IRouteQueryStorage, IStoreStorage } from './types';
+import { useRouter } from 'next/router';
+import qs from 'qs';
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const useContainerStorage = () => {
@@ -14,8 +16,11 @@ export const useContainerStorage = () => {
   const storagePager = useSelector(storageSelectors.storagePager);
   const storageFilter = useSelector(storageSelectors.storageFilter);
   const accessToken = useSelector(sessionSelectors.tokenSelector);
+  const router = useRouter();
 
-  const resetState = useCallback(() => dispatch(storageActions.resetState()), [dispatch]);
+  const resetState = useCallback(() => dispatch(storageActions.resetState()), [
+    dispatch,
+  ]);
 
   const changePager = useCallback(
     (pager: Partial<IApiPager>) => {
@@ -47,9 +52,50 @@ export const useContainerStorage = () => {
       search: storageFilter.entryName,
     };
     return fetchStorageItems(params);
-  }, [fetchStorageItems, storagePager.page, storagePager.perPage, storageFilter]);
+  }, [
+    fetchStorageItems,
+    storagePager.page,
+    storagePager.perPage,
+    storageFilter,
+  ]);
+
+  const routeWatcher = useCallback(() => {
+    const defaultPage = pureState.pager.page;
+    const defaultPerPage = pureState.pager.perPage;
+    const params: IRouteQueryStorage = {};
+
+    if (storagePager.page !== defaultPage) {
+      params.page = storagePager.page;
+    }
+
+    if (storagePager.perPage !== defaultPerPage) {
+      params.perPage = storagePager.perPage;
+    }
+
+    if (storageFilter.entryName && storageFilter.entryName.length > 0) {
+      params.search = storageFilter.entryName;
+    }
+
+    const query = qs.stringify(params);
+
+    if (qs.stringify(router.query) !== query) {
+      router.push(
+        {
+          query,
+        },
+        undefined,
+        { shallow: true },
+      );
+    }
+  }, [
+    router,
+    storagePager.page,
+    storagePager.perPage,
+    storageFilter.entryName,
+  ]);
 
   return {
+    routeWatcher,
     resetState,
     changePager,
     changeFilter,

@@ -26,3 +26,10 @@ export interface IStoreKeys {
   };
   isRouteParsed?: boolean;
 }
+
+export interface IRouteQueryKeys {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  newEntry?: '1';
+}

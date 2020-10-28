@@ -11,3 +11,9 @@ export interface IStoreStorage {
   };
   pagerOptions: number[];
 }
+
+export interface IRouteQueryStorage {
+  page?: number;
+  perPage?: number;
+  search?: string;
+}

@@ -1,8 +1,9 @@
+import { ParsedUrlQuery } from 'querystring';
+import { Store } from '@reduxjs/toolkit';
 import { IStore } from 'src/reducer';
+import { AppDispatch } from 'src/store';
 import { keysPagerSelector, keysSearchSelector } from './selectors';
 import { actions as keysActions } from './reducer';
-import { Store } from '@reduxjs/toolkit';
-import { AppDispatch } from 'src/store';
 
 export const ssrKeysFetchList = async (
   store: Store<IStore>,
@@ -22,4 +23,26 @@ export const ssrKeysFetchList = async (
       isArchived,
     }),
   );
+};
+
+export const ssrRouteParserKeys = (store: Store<IStore>, query: ParsedUrlQuery) => {
+  const dispatch = store.dispatch as AppDispatch;
+
+  const params = query;
+
+  ['page', 'perPage'].forEach((prop) => {
+    const val = params[prop];
+    if (val !== undefined) {
+      const result = parseInt(val.toString());
+      if (!isNaN(result)) {
+        dispatch(keysActions.changePager(params));
+      }
+    }
+  });
+  if (params.search && typeof params.search === 'string') {
+    dispatch(keysActions.changeSearch({ search: params.search }));
+  }
+  if (params.newEntry) {
+    dispatch(keysActions.toggleEditModal({ isOpened: true }));
+  }
 };

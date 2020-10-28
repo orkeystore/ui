@@ -6,11 +6,14 @@ import {
   IApiParamsReposRemove,
 } from 'libs/api/repos/types';
 import * as sessionSelectors from 'src/containers/Session/selectors';
-import { actions as reposActions } from './reducer';
+import { actions as reposActions, pureState } from './reducer';
 import * as reposSelectors from './selectors';
 import { generatePassword } from 'libs/utils/generatePassword';
 import { IApiPager } from 'libs/api/types';
 import { useSelector } from 'react-redux';
+import { useRouter } from 'next/router';
+import { IRouteQueryRepos } from './types';
+import qs from 'qs';
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const useContainerRepos = () => {
@@ -18,11 +21,15 @@ export const useContainerRepos = () => {
   const pager = useSelector(reposSelectors.pagerSelector);
   const search = useSelector(reposSelectors.searchSelector);
   const accessToken = useSelector(sessionSelectors.tokenSelector);
+  const isEditModalOpened = useSelector(reposSelectors.isEditModalOpened);
+  const router = useRouter();
 
   const createNewRepo = useCallback(
     (params: Omit<IApiParamsReposCreate, 'accessToken'>) => {
       const token = generatePassword(64);
-      return dispatch(reposActions.fetchCreateRepo({ ...params, accessToken: token }));
+      return dispatch(
+        reposActions.fetchCreateRepo({ ...params, accessToken: token }),
+      );
     },
     [dispatch],
   );
@@ -77,7 +84,42 @@ export const useContainerRepos = () => {
     [dispatch],
   );
 
+  const routeWatcher = useCallback(() => {
+    const defaultPage = pureState.list.pager.page;
+    const defaultPerPage = pureState.list.pager.perPage;
+    const params: IRouteQueryRepos = {};
+
+    if (pager.page !== defaultPage) {
+      params.page = pager.page;
+    }
+
+    if (pager.perPage !== defaultPerPage) {
+      params.perPage = pager.perPage;
+    }
+
+    if (search && search.length > 0) {
+      params.search = search;
+    }
+
+    if (isEditModalOpened) {
+      params.editRepoModal = '1';
+    }
+
+    const query = qs.stringify(params);
+
+    if (qs.stringify(router.query) !== query) {
+      router.push(
+        {
+          query,
+        },
+        undefined,
+        { shallow: true },
+      );
+    }
+  }, [router, pager.page, pager.perPage, search, isEditModalOpened]);
+
   return {
+    routeWatcher,
     resetState,
     toggleEditModal,
     createNewRepo,

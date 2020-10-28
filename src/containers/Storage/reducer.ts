@@ -9,7 +9,7 @@ type PA<T> = PayloadAction<T>;
 
 const prefix = 'STORAGE';
 
-const pureState: S = {
+export const pureState: S = {
   loading: true,
   initial: true,
   error: null,

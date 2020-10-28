@@ -16,3 +16,10 @@ export interface IStoreRepos {
     search?: string;
   };
 }
+
+export interface IRouteQueryRepos {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  editRepoModal?: '1';
+}

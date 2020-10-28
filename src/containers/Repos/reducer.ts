@@ -16,7 +16,7 @@ type S = IStoreRepos;
 type PA<T> = PayloadAction<T>;
 const prefix = 'REPOS';
 
-const pureState: S = {
+export const pureState: S = {
   create: {
     error: null,
     loading: false,

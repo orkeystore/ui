@@ -6,7 +6,7 @@ import cookies from 'next-cookies';
 import { IStore } from 'src/reducer';
 import { initStore, useStore } from 'src/store';
 import { useContainerRepos } from 'src/containers/Repos/hooks';
-import { ssrReposFetchList } from 'src/containers/Repos/ssr';
+import { ssrReposFetchList, ssrRouteParserRepos } from 'src/containers/Repos/ssr';
 import { ssrSessionUserData } from 'src/containers/Session/ssr';
 import AuthGuard from 'src/components/AuthGuard';
 import Page from 'src/components/Page';
@@ -42,7 +42,8 @@ export const PageContent: React.FC = () => {
 };
 
 const useHooks = () => {
-  const { fetchListRepoWatch, resetState } = useContainerRepos();
+  const { fetchListRepoWatch, resetState, routeWatcher } = useContainerRepos();
+
   useEffect(() => {
     return () => {
       resetState();
@@ -55,12 +56,17 @@ const useHooks = () => {
       req.abort();
     };
   }, [fetchListRepoWatch]);
+
+  useEffect(() => {
+    routeWatcher()
+  }, [routeWatcher]);
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const store = initStore(undefined);
   const { auth_token } = cookies(context);
 
+  ssrRouteParserRepos(store, context.query);
   await ssrSessionUserData(store, auth_token);
   await ssrReposFetchList(store);
 

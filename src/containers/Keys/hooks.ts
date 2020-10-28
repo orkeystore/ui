@@ -17,6 +17,7 @@ import api from 'libs/api';
 import { IApiParamsKeysByIds } from 'libs/api/keys/byIds';
 import qs from 'qs';
 import { useRouter } from 'next/router';
+import { IRouteQueryKeys } from './types';
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const useContainerKeys = () => {
@@ -24,7 +25,6 @@ export const useContainerKeys = () => {
   const pager = useSelector(keysSelectors.keysPagerSelector);
   const search = useSelector(keysSelectors.keysSearchSelector);
   const accessToken = useSelector(sessionSelectors.tokenSelector);
-  const isRouteParsed = useSelector(keysSelectors.isRouteParsedSelector);
   const isEditModalOpened = useSelector(keysSelectors.isEditModalOpened);
   const router = useRouter();
 
@@ -40,13 +40,6 @@ export const useContainerKeys = () => {
   const toggleEditModal = useCallback(
     (params: { isOpened: boolean }) => {
       return dispatch(keysActions.toggleEditModal(params));
-    },
-    [dispatch],
-  );
-
-  const setInitialRouteParsing = useCallback(
-    (params: { isParsed: boolean }) => {
-      return dispatch(keysActions.setInitialRouteParsing(params));
     },
     [dispatch],
   );
@@ -140,60 +133,41 @@ export const useContainerKeys = () => {
     return dispatch(keysActions.reset());
   }, [dispatch]);
 
-  const routeParser = useCallback(() => {
-    const params = qs.parse(location.search, { ignoreQueryPrefix: true });
-
-    ['page', 'perPage'].forEach((prop) => {
-      const val = params[prop];
-      if (val !== undefined) {
-        const result = parseInt(val.toString());
-        if (!isNaN(result)) {
-          changePager({ [prop]: result });
-        }
-      }
-    });
-    if (params.search && typeof params.search === 'string') {
-      changeSearch({ search: params.search });
-    }
-    if (params.newEntry) {
-      toggleEditModal({ isOpened: true });
-    }
-
-    setInitialRouteParsing({ isParsed: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const routeWatcher = useCallback(() => {
     const defaultPage = pureState.list.pager.page;
     const defaultPerPage = pureState.list.pager.perPage;
+    const params: IRouteQueryKeys = {};
 
-    const query = qs.stringify(
-      {
-        page: pager.page === defaultPage ? undefined : pager.page,
-        perPage: pager.perPage === defaultPerPage ? undefined : pager.perPage,
-        search:
-          search === undefined || search.length === 0 ? undefined : search,
-        newEntry: isEditModalOpened ? '1' : undefined,
-      },
-      { addQueryPrefix: true },
-    );
-
-    if (isRouteParsed) {
-      router.push({
-        search: query,
-      });
+    if (pager.page !== defaultPage) {
+      params.page = pager.page;
     }
-  }, [
-    router,
-    pager.page,
-    pager.perPage,
-    search,
-    isRouteParsed,
-    isEditModalOpened,
-  ]);
+
+    if (pager.perPage !== defaultPerPage) {
+      params.perPage = pager.perPage;
+    }
+
+    if (search && search.length > 0) {
+      params.search = search;
+    }
+
+    if (isEditModalOpened) {
+      params.newEntry = '1';
+    }
+
+    const query = qs.stringify(params);
+
+    if (qs.stringify(router.query) !== query) {
+      router.push(
+        {
+          query,
+        },
+        undefined,
+        { shallow: true },
+      );
+    }
+  }, [router, pager.page, pager.perPage, search, isEditModalOpened]);
 
   return {
-    routeParser,
     routeWatcher,
     resetList,
     changePager,
