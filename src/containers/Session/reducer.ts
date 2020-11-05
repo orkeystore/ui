@@ -102,16 +102,24 @@ const set = createSlice<S, typeof reducers, string>({
 
       builder.addCase(trigger.fulfilled, (state, action) => {
         const { token, account, hosts } = action.payload;
-        return {
+        const newState = {
           ...state,
           token,
           account,
           isUserAuthorized: Boolean(token),
           isSessionExpired: false,
           isAlreadyFetched: true,
-          privateHost: hosts.private,
-          publicHost: hosts.public,
         };
+
+        if (hosts.private) {
+          newState.privateHost = hosts.private;
+        }
+
+        if (hosts.public) {
+          newState.publicHost = hosts.public;
+        }
+
+        return newState;
       });
 
       builder.addCase(trigger.rejected, (state, action) => {
